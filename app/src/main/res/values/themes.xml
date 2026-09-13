@@ -1,16 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <style name="Theme.DiscordRPC" parent="Theme.MaterialComponents.DayNight.NoActionBar">
-        <item name="colorPrimary">@color/discord_blurple</item>
-        <item name="colorPrimaryVariant">@color/discord_blurple</item>
+        <item name="colorPrimary">@color/ios_blue</item>
+        <item name="colorPrimaryVariant">@color/ios_blue</item>
         <item name="colorOnPrimary">@color/white</item>
-        <item name="colorSecondary">@color/text_accent</item>
-        <item name="colorSecondaryVariant">@color/text_accent</item>
-        <item name="colorOnSecondary">@color/white</item>
-        <item name="android:statusBarColor">#00000000</item>
-        <item name="android:navigationBarColor">#00000000</item>
-        <item name="android:windowBackground">@color/bg_base</item>
+        <item name="colorSecondary">@color/ios_blue</item>
+        <item name="android:statusBarColor">@color/ios_bg</item>
+        <item name="android:navigationBarColor">@color/ios_bg</item>
+        <item name="android:windowBackground">@color/ios_bg</item>
         <item name="android:windowLightStatusBar">false</item>
-        <item name="android:windowTranslucentStatus">true</item>
+    </style>
+
+    <style name="iOSDialog" parent="ThemeOverlay.MaterialComponents.MaterialAlertDialog">
+        <item name="android:background">@drawable/ios_card</item>
+        <item name="android:textColorPrimary">@color/ios_text</item>
+        <item name="android:textColorSecondary">@color/ios_text2</item>
+        <item name="colorAccent">@color/ios_blue</item>
     </style>
 </resources>

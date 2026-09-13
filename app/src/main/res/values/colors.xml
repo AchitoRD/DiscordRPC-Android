@@ -1,32 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="discord_blurple">#FF5865F2</color>
-    <color name="discord_blurple_80">#CC5865F2</color>
-    <color name="discord_green">#FF57F287</color>
-    <color name="discord_red">#FFED4245</color>
-    <color name="discord_yellow">#FFFEE75C</color>
-
-    <color name="bg_base">#E6121218</color>
-    <color name="bg_surface">#33FFFFFF</color>
-    <color name="bg_card">#40FFFFFF</color>
-    <color name="bg_card_hover">#55FFFFFF</color>
-    <color name="bg_input">#22FFFFFF</color>
-    <color name="bg_dark_overlay">#99000000</color>
-
-    <color name="text_primary">#FFFFFFFF</color>
-    <color name="text_secondary">#B3FFFFFF</color>
-    <color name="text_hint">#66FFFFFF</color>
-    <color name="text_accent">#FFA855F7</color>
-
+    <color name="ios_bg">#FF000000</color>
+    <color name="ios_card">#FF1C1C1E</color>
+    <color name="ios_card2">#FF2C2C2E</color>
+    <color name="ios_separator">#FF3A3A3C</color>
+    <color name="ios_text">#FFFFFFFF</color>
+    <color name="ios_text2">#FF8E8E93</color>
+    <color name="ios_text3">#FF636366</color>
+    <color name="ios_blue">#FF0A84FF</color>
+    <color name="ios_green">#FF30D158</color>
+    <color name="ios_red">#FFFF453A</color>
+    <color name="ios_yellow">#FFFFD60A</color>
+    <color name="ios_purple">#FFBF5AF2</color>
+    <color name="ios_orange">#FFFF9F0A</color>
+    <color name="ios_fill">#FF48484A</color>
+    <color name="ios_fill2">#FF636366</color>
     <color name="white">#FFFFFFFF</color>
     <color name="black">#FF000000</color>
-
-    <color name="status_online">#FF22C55E</color>
-    <color name="status_connecting">#FFFBBF24</color>
-    <color name="status_offline">#FF6B7280</color>
-
+    <color name="status_online">#FF30D158</color>
+    <color name="status_connecting">#FFFFD60A</color>
+    <color name="text_primary">#FFFFFFFF</color>
+    <color name="text_secondary">#FF8E8E93</color>
+    <color name="text_hint">#FF636366</color>
+    <color name="text_accent">#FF0A84FF</color>
+    <color name="bg_card">#FF1C1C1E</color>
     <color name="glass_border">#22FFFFFF</color>
-    <color name="glass_highlight">#1AFFFFFF</color>
-    <color name="gradient_start">#FF5865F2</color>
-    <color name="gradient_end">#FFA855F7</color>
+    <color name="discord_blurple">#FF5865F2</color>
+    <color name="discord_green">#FF30D158</color>
+    <color name="discord_red">#FFFF453A</color>
+    <color name="discord_yellow">#FFFFD60A</color>
+    <color name="gradient_start">#FF0A84FF</color>
+    <color name="gradient_end">#FF5855F2</color>
 </resources>

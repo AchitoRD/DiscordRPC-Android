@@ -30,12 +30,15 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnPermissions: Button
     private lateinit var btnStartStop: Button
     private lateinit var tvLog: TextView
-    private lateinit var cardStatus: CardView
-    private lateinit var cardToken: CardView
+    private lateinit var cardStatus: LinearLayout
 
     private val handler = Handler(Looper.getMainLooper())
     private val intervals = longArrayOf(2000, 3000, 5000, 10000, 30000, 60000)
     private val intervalLabels = arrayOf("2s", "3s", "5s", "10s", "30s", "60s")
+
+    companion object {
+        private const val DEFAULT_APP_ID = "1548810919365054575"
+    }
 
     private val eventHandler: (EventBus.Event) -> Unit = { event ->
         handler.post {
@@ -44,12 +47,12 @@ class MainActivity : AppCompatActivity() {
                 is EventBus.Event.Connected -> {
                     tvStatus.text = event.username
                     tvStatusDot.setBackgroundResource(R.drawable.dot_green)
-                    cardStatus.setCardBackgroundColor(getColor(R.color.status_online))
+                    cardStatus.setBackgroundColor(getColor(R.color.ios_card))
                 }
                 is EventBus.Event.Disconnected -> {
                     tvStatus.text = "Desconectado"
                     tvStatusDot.setBackgroundResource(R.drawable.dot_red)
-                    cardStatus.setCardBackgroundColor(getColor(R.color.bg_card))
+                    cardStatus.setBackgroundColor(getColor(R.color.ios_card))
                     updateUI(false)
                 }
                 is EventBus.Event.AppDetected -> {
@@ -101,7 +104,6 @@ class MainActivity : AppCompatActivity() {
         btnStartStop = findViewById(R.id.btnStartStop)
         tvLog = findViewById(R.id.tvLog)
         cardStatus = findViewById(R.id.cardStatus)
-        cardToken = findViewById(R.id.cardToken)
     }
 
     private fun loadSavedData() {
@@ -109,17 +111,23 @@ class MainActivity : AppCompatActivity() {
         if (savedToken.isNotEmpty()) {
             etToken.setText(savedToken)
             tvTokenHint.text = "Token guardado"
-            tvTokenHint.setTextColor(getColor(R.color.discord_green))
+            tvTokenHint.setTextColor(getColor(R.color.ios_green))
         }
+
         val savedAppId = PrefsManager.getAppId(this)
-        if (savedAppId.isNotEmpty()) etAppId.setText(savedAppId)
+        if (savedAppId.isNotEmpty()) {
+            etAppId.setText(savedAppId)
+        } else {
+            etAppId.setText(DEFAULT_APP_ID)
+            PrefsManager.saveAppId(this, DEFAULT_APP_ID)
+        }
 
         findViewById<Button>(R.id.btnShowToken).setOnClickListener {
-            val showing = etToken.inputType != android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
-            etToken.inputType = if (showing) android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
-            else android.text.InputType.TYPE_CLASS_TEXT
+            val isPassword = etToken.inputType and android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD != 0
+            etToken.inputType = if (isPassword) android.text.InputType.TYPE_CLASS_TEXT
+            else android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
             etToken.setSelection(etToken.text.length)
-            findViewById<Button>(R.id.btnShowToken).text = if (showing) "Mostrar" else "Ocultar"
+            findViewById<Button>(R.id.btnShowToken).text = if (isPassword) "Ocultar" else "Mostrar"
         }
 
         findViewById<Button>(R.id.btnClearToken).setOnClickListener {
@@ -128,32 +136,16 @@ class MainActivity : AppCompatActivity() {
         }
 
         findViewById<Button>(R.id.btnHowToken).setOnClickListener {
-            android.app.AlertDialog.Builder(this)
-                .setTitle("Como obtener tu token")
-                .setMessage("""
-                    |1. Abre Discord en el navegador
-                    |2. Presiona F12
-                    |3. Ve a pestaña "Network"
-                    |4. Busca request a gateway.discord.gg
-                    |5. Headers > Authorization > copia el valor
-                """.trimMargin())
+            android.app.AlertDialog.Builder(this, R.style.iOSDialog)
+                .setTitle("Obtener Token")
+                .setMessage("1. Abre discord.com en el navegador\n2. Presiona F12\n3. Pestaña Network\n4. Busca gateway.discord.gg\n5. Headers > Authorization\n6. Copia el valor completo")
                 .setPositiveButton("OK", null).show()
         }
 
         findViewById<Button>(R.id.btnHowAppId).setOnClickListener {
-            android.app.AlertDialog.Builder(this)
-                .setTitle("Como crear tu Application")
-                .setMessage("""
-                    |1. Ve a https://discord.com/developers/applications
-                    |2. Click "New Application" > ponele nombre
-                    |3. Copia el "Application ID" (Client ID)
-                    |4. Ve a "Rich Presence" > "Art Assets"
-                    |5. Sube iconos con nombres como:
-                    |   app_whatsapp, app_youtube, app_spotify
-                    |   (usa el nombre de la app en minusculas
-                    |    con espacios reemplazados por guion bajo)
-                    |6. Pega el Application ID aqui
-                """.trimMargin())
+            android.app.AlertDialog.Builder(this, R.style.iOSDialog)
+                .setTitle("Subir Art Assets")
+                .setMessage("1. discord.com/developers/applications\n2. New Application > nombre\n3. Copia Application ID\n4. Rich Presence > Art Assets\n5. Sube iconos:\n   app_whatsapp\n   app_youtube\n   app_spotify\n   (minusculas, espacios = _)")
                 .setPositiveButton("OK", null).show()
         }
     }
@@ -184,7 +176,7 @@ class MainActivity : AppCompatActivity() {
         val appId = etAppId.text.toString().trim()
         if (token.isEmpty()) { Toast.makeText(this, "Pega tu token", Toast.LENGTH_SHORT).show(); return }
         if (appId.isEmpty()) { Toast.makeText(this, "Pega tu Application ID", Toast.LENGTH_SHORT).show(); return }
-        if (!hasUsageAccess()) { Toast.makeText(this, "Dale permisos de Usage Access", Toast.LENGTH_SHORT).show(); return }
+        if (!hasUsageAccess()) { Toast.makeText(this, "Otorga permisos de Usage Access", Toast.LENGTH_SHORT).show(); return }
 
         PrefsManager.saveToken(this, token)
         PrefsManager.saveAppId(this, appId)
@@ -193,7 +185,6 @@ class MainActivity : AppCompatActivity() {
         val svc = Intent(this, AppDetectionService::class.java)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) startForegroundService(svc) else startService(svc)
         updateUI(true)
-        appendLog("Iniciando...")
     }
 
     private fun stopRpc() {
@@ -206,18 +197,16 @@ class MainActivity : AppCompatActivity() {
     private fun updateUI(running: Boolean) {
         if (running) {
             btnStartStop.text = "DETENER"
-            btnStartStop.setBackgroundColor(getColor(R.color.discord_red))
+            btnStartStop.setBackgroundColor(getColor(R.color.ios_red))
             tvStatus.text = "Conectando..."
             tvStatusDot.setBackgroundResource(R.drawable.dot_yellow)
-            cardStatus.setCardBackgroundColor(getColor(R.color.status_connecting))
         } else {
             btnStartStop.text = "INICIAR"
-            btnStartStop.setBackgroundColor(getColor(R.color.discord_green))
+            btnStartStop.setBackgroundColor(getColor(R.color.ios_blue))
             tvStatus.text = "Inactivo"
             tvStatusDot.setBackgroundResource(R.drawable.dot_gray)
-            tvCurrentApp.text = "Esperando..."
+            tvCurrentApp.text = ""
             tvAppName.visibility = View.GONE
-            cardStatus.setCardBackgroundColor(getColor(R.color.bg_card))
         }
     }
 
@@ -234,14 +223,14 @@ class MainActivity : AppCompatActivity() {
     private fun checkPermissions() {
         if (hasUsageAccess()) {
             tvPermStatus.setBackgroundResource(R.drawable.dot_green)
-            tvPermLabel.text = "Usage Access: OK"
-            tvPermLabel.setTextColor(getColor(R.color.discord_green))
-            btnPermissions.alpha = 0.5f; btnPermissions.isEnabled = false
+            tvPermLabel.text = "Usage Access"
+            tvPermLabel.setTextColor(getColor(R.color.ios_green))
+            btnPermissions.isEnabled = false
         } else {
             tvPermStatus.setBackgroundResource(R.drawable.dot_red)
-            tvPermLabel.text = "Usage Access: Requerido"
-            tvPermLabel.setTextColor(getColor(R.color.discord_red))
-            btnPermissions.alpha = 1.0f; btnPermissions.isEnabled = true
+            tvPermLabel.text = "Usage Access (requerido)"
+            tvPermLabel.setTextColor(getColor(R.color.ios_red))
+            btnPermissions.isEnabled = true
         }
     }
 
