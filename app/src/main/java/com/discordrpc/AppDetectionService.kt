@@ -18,7 +18,7 @@ class AppDetectionService : Service() {
             "com.android.systemui", "com.android.launcher", "com.android.launcher3",
             "com.android.settings", "com.android.incallui", "com.android.dialer",
             "com.android.phone", "com.miui.home", "com.sec.android.app.launcher",
-            "com.huawei.android.launcher"
+            "com.huawei.android.launcher", "com.android.vending"
         )
     }
 
@@ -30,8 +30,8 @@ class AppDetectionService : Service() {
     private var appStartTime = 0L
     private var lastSwitchTime = 0L
     private var wakeLock: PowerManager.WakeLock? = null
-    private var totalDetections = 0
     private var lastDetections = mutableListOf<Long>()
+    private var staleCount = 0
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -82,11 +82,16 @@ class AppDetectionService : Service() {
         EventBus.post(EventBus.Event.Log("Deteccion cada ${interval/1000}s"))
 
         detectionThread = Thread {
-            Thread.sleep(600) // solo 600ms
+            Thread.sleep(400)
             while (running && !Thread.currentThread().isInterrupted) {
-                try { detectApp(); Thread.sleep(interval) }
-                catch (e: InterruptedException) { break }
-                catch (e: Exception) { EventBus.post(EventBus.Event.Log("Error: ${e.message}")); try { Thread.sleep(interval) } catch (e2: InterruptedException) { break } }
+                try {
+                    detectApp()
+                    Thread.sleep(interval)
+                } catch (e: InterruptedException) { break }
+                catch (e: Exception) {
+                    EventBus.post(EventBus.Event.Log("Error: ${e.message}"))
+                    try { Thread.sleep(interval) } catch (e2: InterruptedException) { break }
+                }
             }
         }.apply { isDaemon = true; name = "Detector"; start() }
     }
@@ -94,20 +99,46 @@ class AppDetectionService : Service() {
     private fun detectApp() {
         val usm = getSystemService(Context.USAGE_STATS_SERVICE) as? UsageStatsManager ?: return
         val now = System.currentTimeMillis()
-        val stats = usm.queryUsageStats(UsageStatsManager.INTERVAL_DAILY, now - 8000, now)
+        val stats = usm.queryUsageStats(UsageStatsManager.INTERVAL_DAILY, now - 10000, now)
         if (stats.isNullOrEmpty()) return
 
         val top = stats.maxByOrNull { it.lastTimeUsed } ?: return
         val pkg = top.packageName
-        if (pkg in EXCLUDED || pkg == currentPackage) return
 
-        if (now - lastSwitchTime < 1000) return // 1s min
+        // If top app is excluded AND we have a current tracked app, check staleness
+        if (pkg in EXCLUDED) {
+            if (currentPackage.isNotEmpty()) {
+                staleCount++
+                // Clear after 3 consecutive stale checks (user went home/locked phone)
+                if (staleCount >= 3) {
+                    EventBus.post(EventBus.Event.Log("App cerrada - limpiando"))
+                    EventBus.post(EventBus.Event.AppDetected("", ""))
+                    currentPackage = ""
+                    currentAppName = ""
+                    staleCount = 0
+                    if (gateway?.isConnected() == true) {
+                        gateway?.clearActivity()
+                    }
+                }
+            }
+            return
+        }
+
+        staleCount = 0
+
+        // Same app, skip
+        if (pkg == currentPackage) return
+
+        // Anti-flood
+        if (now - lastSwitchTime < 800) return
         lastSwitchTime = now
 
-        totalDetections++
         lastDetections.add(now)
         lastDetections = lastDetections.filter { now - it < 60000 }.toMutableList()
-        if (lastDetections.size > 40) { Thread.sleep(10000); return }
+        if (lastDetections.size > 40) {
+            EventBus.post(EventBus.Event.Log("Rate limit - esperando"))
+            Thread.sleep(8000); return
+        }
 
         currentPackage = pkg
         currentAppName = getAppName(pkg)
@@ -132,7 +163,7 @@ class AppDetectionService : Service() {
         try {
             val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
             wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "DiscordRPC:Detect").apply { acquire(60 * 60 * 1000L) }
-        } catch (e: Exception) { }
+        } catch (_: Exception) { }
     }
 
     private fun getAppName(packageName: String): String {
@@ -140,15 +171,19 @@ class AppDetectionService : Service() {
             val pm = applicationContext.packageManager
             val info = pm.getApplicationInfo(packageName, 0)
             pm.getApplicationLabel(info).toString()
-        } catch (e: Exception) { packageName.substringAfterLast('.') }
+        } catch (_: Exception) { packageName.substringAfterLast('.') }
     }
 
     private fun stopService() {
         running = false
         detectionThread?.interrupt(); detectionThread = null
-        try { gateway?.clearActivity(); Thread.sleep(100); gateway?.disconnect() } catch (e: Exception) {}
+        try {
+            gateway?.clearActivity()
+            Thread.sleep(150)
+            gateway?.disconnect()
+        } catch (_: Exception) {}
         gateway = null
-        try { wakeLock?.release() } catch (e: Exception) {}
+        try { wakeLock?.release() } catch (_: Exception) {}
         wakeLock = null
         PrefsManager.setServiceRunning(this, false)
         stopForeground(STOP_FOREGROUND_REMOVE)

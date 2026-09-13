@@ -15,24 +15,35 @@ import androidx.appcompat.app.AppCompatActivity
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var tvStatus: TextView
-    private lateinit var tvStatusDot: View
-    private lateinit var tvCurrentApp: TextView
+    private lateinit var dotStatus: View
+    private lateinit var tvNowPlayingLabel: TextView
+    private lateinit var tvElapsed: TextView
+    private lateinit var rowCurrentApp: LinearLayout
     private lateinit var tvAppName: TextView
+    private lateinit var tvPackageName: TextView
+    private lateinit var progressBar: ProgressBar
     private lateinit var etToken: EditText
     private lateinit var tvTokenHint: TextView
-    private lateinit var seekInterval: SeekBar
     private lateinit var tvInterval: TextView
-    private lateinit var tvPermStatus: View
+    private lateinit var seekInterval: SeekBar
+    private lateinit var dotPerm: View
     private lateinit var tvPermLabel: TextView
-    private lateinit var btnPermissions: Button
-    private lateinit var btnStartStop: Button
     private lateinit var tvLog: TextView
-    private lateinit var cardStatus: LinearLayout
+    private lateinit var fabStartStop: TextView
 
     private val handler = Handler(Looper.getMainLooper())
     private val intervals = longArrayOf(2000, 3000, 5000, 10000, 30000, 60000)
     private val intervalLabels = arrayOf("2s", "3s", "5s", "10s", "30s", "60s")
+    private var progressValue = 0
+    private val progressRunnable = object : Runnable {
+        override fun run() {
+            if (PrefsManager.isServiceRunning(this@MainActivity)) {
+                progressValue = (progressValue + 1) % 101
+                progressBar.progress = progressValue
+                handler.postDelayed(this, 150)
+            }
+        }
+    }
 
     companion object {
         private const val DEFAULT_APP_ID = "1548810919365054575"
@@ -41,24 +52,26 @@ class MainActivity : AppCompatActivity() {
     private val eventHandler: (EventBus.Event) -> Unit = { event ->
         handler.post {
             when (event) {
-                is EventBus.Event.Status -> tvStatus.text = event.message
+                is EventBus.Event.Status -> tvNowPlayingLabel.text = event.message
                 is EventBus.Event.Connected -> {
-                    tvStatus.text = event.username
-                    tvStatusDot.setBackgroundResource(R.drawable.dot_green)
+                    tvNowPlayingLabel.text = event.username
+                    dotStatus.setBackgroundResource(R.drawable.dot_green)
                 }
                 is EventBus.Event.Disconnected -> {
-                    tvStatus.text = "Desconectado"
-                    tvStatusDot.setBackgroundResource(R.drawable.dot_red)
+                    tvNowPlayingLabel.text = "Desconectado"
+                    dotStatus.setBackgroundResource(R.drawable.dot_red)
                     updateUI(false)
                 }
                 is EventBus.Event.AppDetected -> {
-                    tvCurrentApp.text = event.name
-                    tvAppName.text = event.packageName
-                    tvAppName.visibility = View.VISIBLE
+                    rowCurrentApp.visibility = View.VISIBLE
+                    tvAppName.text = event.name
+                    tvPackageName.text = event.packageName
+                    progressValue = 0
+                    progressBar.progress = 0
                 }
                 is EventBus.Event.Error -> {
-                    tvStatus.text = event.message
-                    tvStatusDot.setBackgroundResource(R.drawable.dot_red)
+                    tvNowPlayingLabel.text = event.message
+                    dotStatus.setBackgroundResource(R.drawable.dot_red)
                 }
                 is EventBus.Event.Log -> appendLog(event.line)
             }
@@ -82,23 +95,27 @@ class MainActivity : AppCompatActivity() {
         checkPermissions()
     }
 
-    override fun onPause() { super.onPause(); EventBus.onEvent = null }
+    override fun onPause() {
+        super.onPause()
+        EventBus.onEvent = null
+    }
 
     private fun initViews() {
-        tvStatus = findViewById(R.id.tvStatus)
-        tvStatusDot = findViewById(R.id.tvStatusDot)
-        tvCurrentApp = findViewById(R.id.tvCurrentApp)
+        dotStatus = findViewById(R.id.dotStatus)
+        tvNowPlayingLabel = findViewById(R.id.tvNowPlayingLabel)
+        tvElapsed = findViewById(R.id.tvElapsed)
+        rowCurrentApp = findViewById(R.id.rowCurrentApp)
         tvAppName = findViewById(R.id.tvAppName)
+        tvPackageName = findViewById(R.id.tvPackageName)
+        progressBar = findViewById(R.id.progressBar)
         etToken = findViewById(R.id.etToken)
         tvTokenHint = findViewById(R.id.tvTokenHint)
         seekInterval = findViewById(R.id.seekInterval)
         tvInterval = findViewById(R.id.tvInterval)
-        tvPermStatus = findViewById(R.id.tvPermStatus)
+        dotPerm = findViewById(R.id.dotPerm)
         tvPermLabel = findViewById(R.id.tvPermLabel)
-        btnPermissions = findViewById(R.id.btnPermissions)
-        btnStartStop = findViewById(R.id.btnStartStop)
         tvLog = findViewById(R.id.tvLog)
-        cardStatus = findViewById(R.id.cardStatus)
+        fabStartStop = findViewById(R.id.fabStartStop)
     }
 
     private fun loadSavedData() {
@@ -106,67 +123,78 @@ class MainActivity : AppCompatActivity() {
         if (savedToken.isNotEmpty()) {
             etToken.setText(savedToken)
             tvTokenHint.text = "Token guardado"
-            tvTokenHint.setTextColor(getColor(R.color.ios_green))
+            tvTokenHint.setTextColor(getColor(R.color.orbit_green))
         }
 
-        // Application ID pre-cargado
         if (PrefsManager.getAppId(this).isEmpty()) {
             PrefsManager.saveAppId(this, DEFAULT_APP_ID)
         }
 
-        findViewById<Button>(R.id.btnShowToken).setOnClickListener {
+        findViewById<TextView>(R.id.btnShowToken).setOnClickListener {
             val isPassword = etToken.inputType and android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD != 0
             etToken.inputType = if (isPassword) android.text.InputType.TYPE_CLASS_TEXT
             else android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
             etToken.setSelection(etToken.text.length)
-            findViewById<Button>(R.id.btnShowToken).text = if (isPassword) "Ocultar" else "Mostrar"
+            findViewById<TextView>(R.id.btnShowToken).text = if (isPassword) "Ocultar" else "Mostrar"
         }
 
-        findViewById<Button>(R.id.btnClearToken).setOnClickListener {
+        findViewById<TextView>(R.id.btnClearToken).setOnClickListener {
             etToken.setText(""); PrefsManager.saveToken(this, "")
             tvTokenHint.text = ""
         }
 
-        findViewById<Button>(R.id.btnHowToken).setOnClickListener {
-            android.app.AlertDialog.Builder(this, R.style.iOSDialog)
+        findViewById<TextView>(R.id.btnHowToken).setOnClickListener {
+            android.app.AlertDialog.Builder(this, R.style.OrbitDialog)
                 .setTitle("Obtener Token")
                 .setMessage("1. Abre discord.com en el navegador\n2. Presiona F12\n3. Pestaña Network\n4. Busca gateway.discord.gg\n5. Headers > Authorization\n6. Copia el valor completo")
                 .setPositiveButton("OK", null).show()
         }
 
-        findViewById<Button>(R.id.btnHowAsset).setOnClickListener {
-            android.app.AlertDialog.Builder(this, R.style.iOSDialog)
-                .setTitle("Subir tu icono (1 vez)")
-                .setMessage("1. discord.com/developers/applications\n2. Selecciona tu Application\n3. Rich Presence > Art Assets\n4. Add Image(s)\n5. Nombre: default\n6. Sube UN icono (el de tu Application)\n7. Save\n\nListo - ese icono se usara para todas las apps")
+        findViewById<TextView>(R.id.btnHowAsset).setOnClickListener {
+            android.app.AlertDialog.Builder(this, R.style.OrbitDialog)
+                .setTitle("Subir Art Assets")
+                .setMessage("1. discord.com/developers/applications\n2. Selecciona tu Application\n3. Rich Presence > Art Assets\n4. Add Image(s)\n5. Sube iconos: whatsapp, youtube, facebook, instagram, tik-tok, default\n6. Los nombres deben ser EXACTOS\n7. Save")
                 .setPositiveButton("OK", null).show()
+        }
+
+        findViewById<TextView>(R.id.btnClearLog).setOnClickListener {
+            tvLog.text = ""
         }
     }
 
     private fun setupInterval() {
         val saved = PrefsManager.getInterval(this)
-        val idx = intervals.indexOf(saved).coerceAtLeast(1)
+        val idx = intervals.indexOf(saved).coerceAtLeast(0)
         seekInterval.progress = idx
         tvInterval.text = intervalLabels[idx]
         seekInterval.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(s: SeekBar?, p: Int, fromUser: Boolean) { tvInterval.text = intervalLabels[p] }
+            override fun onProgressChanged(s: SeekBar?, p: Int, fromUser: Boolean) {
+                tvInterval.text = intervalLabels[p]
+            }
             override fun onStartTrackingTouch(s: SeekBar?) {}
             override fun onStopTrackingTouch(s: SeekBar?) {
-                PrefsManager.setInterval(this@MainActivity, intervals[s?.progress ?: 1])
+                PrefsManager.setInterval(this@MainActivity, intervals[s?.progress ?: 0])
             }
         })
     }
 
     private fun setupButtons() {
-        btnPermissions.setOnClickListener { startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)) }
-        btnStartStop.setOnClickListener {
+        findViewById<TextView>(R.id.btnPermissions).setOnClickListener {
+            startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
+        }
+        fabStartStop.setOnClickListener {
             if (PrefsManager.isServiceRunning(this)) stopRpc() else startRpc()
         }
     }
 
     private fun startRpc() {
         val token = etToken.text.toString().trim()
-        if (token.isEmpty()) { Toast.makeText(this, "Pega tu token", Toast.LENGTH_SHORT).show(); return }
-        if (!hasUsageAccess()) { Toast.makeText(this, "Otorga Usage Access", Toast.LENGTH_SHORT).show(); return }
+        if (token.isEmpty()) {
+            Toast.makeText(this, "Pega tu token", Toast.LENGTH_SHORT).show(); return
+        }
+        if (!hasUsageAccess()) {
+            Toast.makeText(this, "Otorga Usage Access", Toast.LENGTH_SHORT).show(); return
+        }
 
         PrefsManager.saveToken(this, token)
         PrefsManager.saveAppId(this, DEFAULT_APP_ID)
@@ -186,17 +214,21 @@ class MainActivity : AppCompatActivity() {
 
     private fun updateUI(running: Boolean) {
         if (running) {
-            btnStartStop.text = "DETENER"
-            btnStartStop.setBackgroundColor(getColor(R.color.ios_red))
-            tvStatus.text = "Conectando..."
-            tvStatusDot.setBackgroundResource(R.drawable.dot_yellow)
+            fabStartStop.text = "■"
+            fabStartStop.setBackgroundResource(R.drawable.orbit_button)
+            tvNowPlayingLabel.text = "Conectando..."
+            dotStatus.setBackgroundResource(R.drawable.dot_yellow)
+            rowCurrentApp.visibility = View.GONE
+            handler.post(progressRunnable)
         } else {
-            btnStartStop.text = "INICIAR"
-            btnStartStop.setBackgroundColor(getColor(R.color.ios_blue))
-            tvStatus.text = "Inactivo"
-            tvStatusDot.setBackgroundResource(R.drawable.dot_gray)
-            tvCurrentApp.text = ""
-            tvAppName.visibility = View.GONE
+            fabStartStop.text = "▶"
+            fabStartStop.setBackgroundResource(R.drawable.orbit_button)
+            tvNowPlayingLabel.text = "Inactivo"
+            dotStatus.setBackgroundResource(R.drawable.dot_gray)
+            rowCurrentApp.visibility = View.GONE
+            progressBar.progress = 0
+            progressValue = 0
+            handler.removeCallbacks(progressRunnable)
         }
     }
 
@@ -212,21 +244,19 @@ class MainActivity : AppCompatActivity() {
 
     private fun checkPermissions() {
         if (hasUsageAccess()) {
-            tvPermStatus.setBackgroundResource(R.drawable.dot_green)
+            dotPerm.setBackgroundResource(R.drawable.dot_green)
             tvPermLabel.text = "Usage Access"
-            tvPermLabel.setTextColor(getColor(R.color.ios_green))
-            btnPermissions.isEnabled = false
+            tvPermLabel.setTextColor(getColor(R.color.orbit_green))
         } else {
-            tvPermStatus.setBackgroundResource(R.drawable.dot_red)
+            dotPerm.setBackgroundResource(R.drawable.dot_red)
             tvPermLabel.text = "Usage Access (requerido)"
-            tvPermLabel.setTextColor(getColor(R.color.ios_red))
-            btnPermissions.isEnabled = true
+            tvPermLabel.setTextColor(getColor(R.color.orbit_coral))
         }
     }
 
     private fun appendLog(message: String) {
         val time = java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date())
-        tvLog.append("$time $message\n")
+        tvLog.append("$time  $message\n")
         val scroll = (tvLog.layout?.let { it.getLineTop(tvLog.lineCount) - tvLog.height } ?: 0)
         if (scroll > 0) tvLog.scrollTo(0, scroll)
     }

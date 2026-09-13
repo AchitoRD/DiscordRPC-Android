@@ -1,6 +1,5 @@
 package com.discordrpc
 
-import android.util.Log
 import okhttp3.*
 import okio.ByteString
 import org.json.JSONObject
@@ -21,7 +20,6 @@ class DiscordGateway(private val token: String, private val applicationId: Strin
     companion object {
         private const val GATEWAY_URL = "wss://gateway.discord.gg/?v=10&encoding=json"
 
-        // Mapeo de package name -> asset key
         private val ASSET_MAP = mapOf(
             "com.whatsapp" to "whatsapp",
             "com.whatsapp.w4b" to "whatsapp",
@@ -35,15 +33,12 @@ class DiscordGateway(private val token: String, private val applicationId: Strin
             "com.ss.android.ugc.trill" to "tik-tok",
             "com.spotify.music" to "default",
             "com.netflix.mediaclient" to "default",
-            "com.discord" to "default",
-            "com.discord.android" to "default",
             "com.opera.browser" to "default",
             "com.opera.mini.native" to "default",
             "com.UCMobile" to "default",
             "com.android.chrome" to "default",
             "org.mozilla.firefox" to "default",
             "com.brave.browser" to "default",
-            "com.vanced.manager" to "youtube",
             "com.termux" to "default",
             "com.github.android" to "default"
         )
@@ -101,7 +96,9 @@ class DiscordGateway(private val token: String, private val applicationId: Strin
                 put("token", token)
                 put("intents", 0)
                 put("properties", JSONObject().apply {
-                    put("os", "linux"); put("browser", "DiscordRPC"); put("device", "DiscordRPC")
+                    put("os", "android")
+                    put("browser", "DiscordRPC")
+                    put("device", "DiscordRPC")
                 })
             })
         }
@@ -112,10 +109,12 @@ class DiscordGateway(private val token: String, private val applicationId: Strin
     private fun startHeartbeat() {
         heartbeatThread?.interrupt()
         heartbeatThread = Thread {
-            try { Thread.sleep(heartbeatInterval) } catch (e: InterruptedException) { return@Thread }
+            try { Thread.sleep(heartbeatInterval) } catch (_: InterruptedException) { return@Thread }
             while (isConnected.get() && !Thread.currentThread().isInterrupted) {
-                try { sendHeartbeat(lastSequenceNumber); Thread.sleep(heartbeatInterval) }
-                catch (e: InterruptedException) { break }
+                try {
+                    sendHeartbeat(lastSequenceNumber)
+                    Thread.sleep(heartbeatInterval)
+                } catch (_: InterruptedException) { break }
             }
         }.apply { isDaemon = true; name = "Heartbeat"; start() }
     }
@@ -154,13 +153,13 @@ class DiscordGateway(private val token: String, private val applicationId: Strin
         val assetKey = getAssetKey(packageName)
 
         val activity = JSONObject().apply {
-            put("name", appName)
+            put("name", "DiscordRPC")
             put("type", 0)
             if (details.isNotEmpty()) put("details", details)
             if (state.isNotEmpty()) put("state", state)
             put("assets", JSONObject().apply {
                 put("large_image", assetKey)
-                put("large_text", appName)
+                put("large_text", largeImageText ?: appName)
             })
             if (startTimestamp != null) {
                 put("timestamps", JSONObject().apply { put("start", startTimestamp) })
@@ -191,12 +190,13 @@ class DiscordGateway(private val token: String, private val applicationId: Strin
                 put("since", JSONObject.NULL)
             })
         }.toString())
+        EventBus.post(EventBus.Event.Log("Presence limpiado"))
     }
 
     fun disconnect() {
         isConnected.set(false)
         heartbeatThread?.interrupt(); heartbeatThread = null
-        try { webSocket?.close(1000, "Bye") } catch (e: Exception) {}
+        try { webSocket?.close(1000, "Bye") } catch (_: Exception) {}
         webSocket = null
         EventBus.post(EventBus.Event.Disconnected("Desconectado"))
     }

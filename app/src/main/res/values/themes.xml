@@ -1,20 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <style name="Theme.DiscordRPC" parent="Theme.MaterialComponents.DayNight.NoActionBar">
-        <item name="colorPrimary">@color/ios_blue</item>
-        <item name="colorPrimaryVariant">@color/ios_blue</item>
+        <item name="colorPrimary">@color/orbit_periwinkle</item>
+        <item name="colorPrimaryVariant">@color/orbit_periwinkle</item>
         <item name="colorOnPrimary">@color/white</item>
-        <item name="colorSecondary">@color/ios_blue</item>
-        <item name="android:statusBarColor">@color/ios_bg</item>
-        <item name="android:navigationBarColor">@color/ios_bg</item>
-        <item name="android:windowBackground">@color/ios_bg</item>
+        <item name="colorSecondary">@color/orbit_periwinkle</item>
+        <item name="android:statusBarColor">@color/orbit_bg</item>
+        <item name="android:navigationBarColor">@color/orbit_bg</item>
+        <item name="android:windowBackground">@color/orbit_bg</item>
         <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
     </style>
 
-    <style name="iOSDialog" parent="ThemeOverlay.MaterialComponents.MaterialAlertDialog">
-        <item name="android:background">@drawable/ios_card</item>
-        <item name="android:textColorPrimary">@color/ios_text</item>
-        <item name="android:textColorSecondary">@color/ios_text2</item>
-        <item name="colorAccent">@color/ios_blue</item>
+    <style name="OrbitDialog" parent="ThemeOverlay.MaterialComponents.MaterialAlertDialog">
+        <item name="android:background">@drawable/orbit_card</item>
+        <item name="android:textColorPrimary">@color/orbit_text</item>
+        <item name="android:textColorSecondary">@color/orbit_muted</item>
+        <item name="colorAccent">@color/orbit_periwinkle</item>
     </style>
 </resources>

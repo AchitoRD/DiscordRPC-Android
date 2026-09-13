@@ -1,133 +1,492 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/ios_bg"
-    android:orientation="vertical">
+    android:background="@color/orbit_bg">
 
-    <ScrollView
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:fillViewport="true"
-        android:overScrollMode="never"
-        android:paddingHorizontal="16dp">
+        android:layout_height="match_parent"
+        android:orientation="vertical">
 
-        <LinearLayout
+        <ScrollView
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:paddingTop="48dp"
-            android:paddingBottom="100dp">
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:fillViewport="true"
+            android:overScrollMode="never"
+            android:paddingHorizontal="16dp">
 
-            <!-- STATUS -->
             <LinearLayout
-                android:id="@+id/cardStatus"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:background="@drawable/ios_card"
-                android:padding="16dp">
+                android:paddingTop="48dp"
+                android:paddingBottom="120dp">
 
+                <!-- Header -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="DISCORD RPC"
+                    android:textColor="@color/orbit_muted"
+                    android:textSize="11sp"
+                    android:letterSpacing="0.15"
+                    android:textStyle="bold" />
+
+                <!-- NOW PLAYING CARD -->
+                <LinearLayout
+                    android:id="@+id/cardNowPlaying"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="@drawable/orbit_now_card"
+                    android:padding="20dp"
+                    android:layout_marginTop="12dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <View
+                            android:id="@+id/dotStatus"
+                            android:layout_width="7dp"
+                            android:layout_height="7dp"
+                            android:background="@drawable/dot_gray" />
+
+                        <TextView
+                            android:id="@+id/tvNowPlayingLabel"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Inactivo"
+                            android:textColor="@color/orbit_text"
+                            android:textSize="17sp"
+                            android:textStyle="bold"
+                            android:layout_marginStart="10dp" />
+
+                        <View
+                            android:layout_width="0dp"
+                            android:layout_height="0dp"
+                            android:layout_weight="1" />
+
+                        <TextView
+                            android:id="@+id/tvElapsed"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text=""
+                            android:textColor="@color/orbit_muted"
+                            android:textSize="12sp"
+                            android:fontFamily="monospace" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginTop="12dp"
+                        android:id="@+id/rowCurrentApp"
+                        android:visibility="gone">
+
+                        <View
+                            android:layout_width="36dp"
+                            android:layout_height="36dp"
+                            android:background="@drawable/orbit_avatar" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical"
+                            android:layout_marginStart="12dp">
+
+                            <TextView
+                                android:id="@+id/tvAppName"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="App"
+                                android:textColor="@color/orbit_text"
+                                android:textSize="16sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/tvPackageName"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="com.app"
+                                android:textColor="@color/orbit_muted"
+                                android:textSize="11sp"
+                                android:fontFamily="monospace"
+                                android:maxLines="1"
+                                android:ellipsize="end" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <ProgressBar
+                        android:id="@+id/progressBar"
+                        style="@android:style/Widget.ProgressBar.Horizontal"
+                        android:layout_width="match_parent"
+                        android:layout_height="4dp"
+                        android:layout_marginTop="14dp"
+                        android:max="100"
+                        android:progress="0"
+                        android:progressDrawable="@drawable/orbit_bar_bg" />
+                </LinearLayout>
+
+                <!-- SETTINGS CARD -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical">
+                    android:orientation="vertical"
+                    android:background="@drawable/orbit_card"
+                    android:padding="16dp"
+                    android:layout_marginTop="12dp">
 
-                    <View android:id="@+id/tvStatusDot" android:layout_width="8dp" android:layout_height="8dp" android:background="@drawable/dot_gray" />
+                    <!-- Token -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Discord Token"
+                        android:textColor="@color/orbit_muted"
+                        android:textSize="13sp" />
 
-                    <TextView android:id="@+id/tvStatus" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Inactivo" android:textColor="@color/ios_text" android:textSize="17sp" android:textStyle="bold" android:layout_marginStart="10dp" />
+                    <EditText
+                        android:id="@+id/etToken"
+                        android:layout_width="match_parent"
+                        android:layout_height="44dp"
+                        android:layout_marginTop="6dp"
+                        android:hint="pega tu token..."
+                        android:textColor="@color/orbit_text"
+                        android:textColorHint="@color/orbit_muted2"
+                        android:inputType="textPassword"
+                        android:singleLine="true"
+                        android:textSize="13sp"
+                        android:fontFamily="monospace"
+                        android:paddingHorizontal="12dp"
+                        android:background="@drawable/orbit_input"
+                        android:textCursorDrawable="@color/orbit_periwinkle" />
 
-                    <TextView android:id="@+id/tvCurrentApp" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="" android:textColor="@color/ios_text2" android:textSize="13sp" />
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginTop="4dp"
+                        android:gravity="center_vertical">
+
+                        <TextView
+                            android:id="@+id/tvTokenHint"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text=""
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:id="@+id/btnShowToken"
+                            android:layout_width="wrap_content"
+                            android:layout_height="32dp"
+                            android:gravity="center"
+                            android:text="Mostrar"
+                            android:textSize="12sp"
+                            android:textColor="@color/orbit_periwinkle"
+                            android:paddingHorizontal="8dp" />
+
+                        <TextView
+                            android:id="@+id/btnClearToken"
+                            android:layout_width="wrap_content"
+                            android:layout_height="32dp"
+                            android:gravity="center"
+                            android:text="Limpiar"
+                            android:textSize="12sp"
+                            android:textColor="@color/orbit_coral"
+                            android:paddingHorizontal="8dp" />
+
+                        <TextView
+                            android:id="@+id/btnHowToken"
+                            android:layout_width="wrap_content"
+                            android:layout_height="32dp"
+                            android:gravity="center"
+                            android:text="Ayuda"
+                            android:textSize="12sp"
+                            android:textColor="@color/orbit_periwinkle"
+                            android:paddingHorizontal="8dp" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="@color/orbit_line"
+                        android:layout_marginVertical="12dp" />
+
+                    <!-- Permission -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <View
+                            android:id="@+id/dotPerm"
+                            android:layout_width="7dp"
+                            android:layout_height="7dp"
+                            android:background="@drawable/dot_gray" />
+
+                        <TextView
+                            android:id="@+id/tvPermLabel"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Usage Access"
+                            android:textColor="@color/orbit_text"
+                            android:textSize="15sp"
+                            android:layout_marginStart="10dp" />
+
+                        <TextView
+                            android:id="@+id/btnPermissions"
+                            android:layout_width="wrap_content"
+                            android:layout_height="32dp"
+                            android:gravity="center"
+                            android:text="Abrir"
+                            android:textSize="13sp"
+                            android:textColor="@color/orbit_periwinkle"
+                            android:paddingHorizontal="8dp" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="@color/orbit_line"
+                        android:layout_marginVertical="12dp" />
+
+                    <!-- Interval -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Frecuencia"
+                            android:textColor="@color/orbit_text"
+                            android:textSize="15sp" />
+
+                        <TextView
+                            android:id="@+id/tvInterval"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="2s"
+                            android:textColor="@color/orbit_periwinkle"
+                            android:textSize="15sp"
+                            android:fontFamily="monospace" />
+                    </LinearLayout>
+
+                    <SeekBar
+                        android:id="@+id/seekInterval"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:max="5"
+                        android:progress="0"
+                        android:progressTint="@color/orbit_periwinkle"
+                        android:thumbTint="@color/orbit_periwinkle"
+                        android:splitTrack="false" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="@color/orbit_line"
+                        android:layout_marginVertical="12dp" />
+
+                    <!-- Art Assets -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <View
+                            android:layout_width="7dp"
+                            android:layout_height="7dp"
+                            android:background="@drawable/dot_green" />
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Iconos (Art Assets)"
+                            android:textColor="@color/orbit_text"
+                            android:textSize="15sp"
+                            android:layout_marginStart="10dp" />
+
+                        <TextView
+                            android:id="@+id/btnHowAsset"
+                            android:layout_width="wrap_content"
+                            android:layout_height="32dp"
+                            android:gravity="center"
+                            android:text="Info"
+                            android:textSize="13sp"
+                            android:textColor="@color/orbit_periwinkle"
+                            android:paddingHorizontal="8dp" />
+                    </LinearLayout>
                 </LinearLayout>
 
-                <View android:layout_width="match_parent" android:layout_height="1dp" android:background="@color/ios_separator" android:layout_marginVertical="12dp" />
+                <!-- LOG CARD -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="@drawable/orbit_card"
+                    android:padding="16dp"
+                    android:layout_marginTop="12dp">
 
-                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
-                    <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="App detectada" android:textColor="@color/ios_text2" android:textSize="15sp" />
-                    <TextView android:id="@+id/tvAppName" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="--" android:textColor="@color/ios_text" android:textSize="15sp" android:visibility="gone" />
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Registro"
+                            android:textColor="@color/orbit_muted"
+                            android:textSize="13sp" />
+
+                        <TextView
+                            android:id="@+id/btnClearLog"
+                            android:layout_width="wrap_content"
+                            android:layout_height="32dp"
+                            android:gravity="center"
+                            android:text="Limpiar"
+                            android:textSize="12sp"
+                            android:textColor="@color/orbit_muted2"
+                            android:paddingHorizontal="8dp" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/tvLog"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text=""
+                        android:textColor="@color/orbit_muted2"
+                        android:textSize="11sp"
+                        android:fontFamily="monospace"
+                        android:lineSpacingExtra="3dp"
+                        android:layout_marginTop="8dp"
+                        android:maxLines="12" />
                 </LinearLayout>
+
             </LinearLayout>
+        </ScrollView>
 
-            <!-- TOKEN -->
+        <!-- BOTTOM NAVBAR -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="64dp"
+            android:background="@drawable/orbit_navbar"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:paddingBottom="4dp">
+
             <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:id="@+id/navHome"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
                 android:orientation="vertical"
-                android:background="@drawable/ios_card"
-                android:layout_marginTop="8dp"
-                android:padding="16dp">
+                android:gravity="center"
+                android:paddingTop="10dp">
 
-                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Discord Token" android:textColor="@color/ios_text2" android:textSize="13sp" />
+                <TextView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:gravity="center"
+                    android:text="⌂"
+                    android:textColor="@color/orbit_periwinkle"
+                    android:textSize="18sp" />
 
-                <EditText android:id="@+id/etToken" android:layout_width="match_parent" android:layout_height="44dp" android:layout_marginTop="6dp" android:hint="token..." android:textColor="@color/ios_text" android:textColorHint="@color/ios_text3" android:backgroundTint="@color/ios_blue" android:inputType="textPassword" android:singleLine="true" android:textSize="15sp" android:fontFamily="monospace" android:paddingHorizontal="12dp" android:background="@drawable/ios_input" />
-
-                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="6dp">
-                    <Button android:id="@+id/btnShowToken" android:layout_width="wrap_content" android:layout_height="32dp" android:text="Mostrar" android:textAllCaps="false" android:textSize="13sp" android:textColor="@color/ios_blue" android:background="@android:color/transparent" android:minHeight="0dp" android:minWidth="0dp" />
-                    <Button android:id="@+id/btnClearToken" android:layout_width="wrap_content" android:layout_height="32dp" android:text="Limpiar" android:textAllCaps="false" android:textSize="13sp" android:textColor="@color/ios_red" android:background="@android:color/transparent" android:minHeight="0dp" android:minWidth="0dp" />
-                    <View android:layout_width="0dp" android:layout_height="0dp" android:layout_weight="1" />
-                    <Button android:id="@+id/btnHowToken" android:layout_width="wrap_content" android:layout_height="32dp" android:text="Ayuda" android:textAllCaps="false" android:textSize="13sp" android:textColor="@color/ios_blue" android:background="@android:color/transparent" android:minHeight="0dp" android:minWidth="0dp" />
-                </LinearLayout>
-
-                <TextView android:id="@+id/tvTokenHint" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="" android:textSize="12sp" android:layout_marginTop="4dp" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Inicio"
+                    android:textColor="@color/orbit_periwinkle"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    android:layout_marginTop="2dp" />
             </LinearLayout>
 
-            <!-- SETTINGS -->
             <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:id="@+id/navSettings"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
                 android:orientation="vertical"
-                android:background="@drawable/ios_card"
-                android:layout_marginTop="8dp"
-                android:padding="16dp">
+                android:gravity="center"
+                android:paddingTop="10dp">
 
-                <!-- Permiso -->
-                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
-                    <View android:id="@+id/tvPermStatus" android:layout_width="8dp" android:layout_height="8dp" android:background="@drawable/dot_red" />
-                    <TextView android:id="@+id/tvPermLabel" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Usage Access" android:textColor="@color/ios_text" android:textSize="15sp" android:layout_marginStart="10dp" />
-                    <Button android:id="@+id/btnPermissions" android:layout_width="wrap_content" android:layout_height="32dp" android:text="Abrir" android:textAllCaps="false" android:textSize="13sp" android:textColor="@color/ios_blue" android:background="@android:color/transparent" android:minHeight="0dp" android:minWidth="0dp" />
-                </LinearLayout>
+                <TextView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:gravity="center"
+                    android:text="⚙"
+                    android:textColor="@color/orbit_muted2"
+                    android:textSize="18sp" />
 
-                <View android:layout_width="match_parent" android:layout_height="1dp" android:background="@color/ios_separator" android:layout_marginVertical="12dp" />
-
-                <!-- Frecuencia -->
-                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
-                    <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Frecuencia" android:textColor="@color/ios_text" android:textSize="15sp" />
-                    <TextView android:id="@+id/tvInterval" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="3s" android:textColor="@color/ios_blue" android:textSize="15sp" />
-                </LinearLayout>
-
-                <SeekBar android:id="@+id/seekInterval" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:max="5" android:progress="1" android:progressTint="@color/ios_blue" android:thumbTint="@color/ios_blue" android:splitTrack="false" />
-
-                <View android:layout_width="match_parent" android:layout_height="1dp" android:background="@color/ios_separator" android:layout_marginVertical="12dp" />
-
-                <!-- Asset -->
-                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
-                    <View android:layout_width="8dp" android:layout_height="8dp" android:background="@drawable/dot_green" />
-                    <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Icono (Art Asset)" android:textColor="@color/ios_text" android:textSize="15sp" android:layout_marginStart="10dp" />
-                    <Button android:id="@+id/btnHowAsset" android:layout_width="wrap_content" android:layout_height="32dp" android:text="Subir" android:textAllCaps="false" android:textSize="13sp" android:textColor="@color/ios_blue" android:background="@android:color/transparent" android:minHeight="0dp" android:minWidth="0dp" />
-                </LinearLayout>
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Ajustes"
+                    android:textColor="@color/orbit_muted2"
+                    android:textSize="10sp"
+                    android:layout_marginTop="2dp" />
             </LinearLayout>
 
-            <!-- LOG -->
             <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:id="@+id/navAbout"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
                 android:orientation="vertical"
-                android:background="@drawable/ios_card"
-                android:layout_marginTop="8dp"
-                android:padding="16dp">
+                android:gravity="center"
+                android:paddingTop="10dp">
 
-                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Registro" android:textColor="@color/ios_text2" android:textSize="13sp" />
+                <TextView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:gravity="center"
+                    android:text="?"
+                    android:textColor="@color/orbit_muted2"
+                    android:textSize="18sp" />
 
-                <TextView android:id="@+id/tvLog" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="" android:textColor="@color/ios_text3" android:textSize="12sp" android:fontFamily="monospace" android:layout_marginTop="8dp" android:maxLines="8" android:lineSpacingExtra="3dp" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Info"
+                    android:textColor="@color/orbit_muted2"
+                    android:textSize="10sp"
+                    android:layout_marginTop="2dp" />
             </LinearLayout>
-
         </LinearLayout>
-    </ScrollView>
+    </LinearLayout>
 
-    <!-- BUTTON -->
-    <Button android:id="@+id/btnStartStop" android:layout_width="match_parent" android:layout_height="54dp" android:layout_marginHorizontal="16dp" android:layout_marginBottom="24dp" android:text="INICIAR" android:textAllCaps="true" android:textSize="17sp" android:textStyle="bold" android:textColor="@color/white" android:background="@drawable/ios_button" android:elevation="0dp" />
+    <!-- FAB START/STOP -->
+    <TextView
+        android:id="@+id/fabStartStop"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
+        android:layout_gravity="center_horizontal|bottom"
+        android:layout_marginBottom="88dp"
+        android:gravity="center"
+        android:text="▶"
+        android:textColor="@color/white"
+        android:textSize="22sp"
+        android:background="@drawable/orbit_button"
+        android:elevation="6dp" />
 
-</LinearLayout>
+</FrameLayout>
