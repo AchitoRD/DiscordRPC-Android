@@ -12,7 +12,6 @@ import android.provider.Settings
 import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
-import androidx.cardview.widget.CardView
 
 class MainActivity : AppCompatActivity() {
 
@@ -21,7 +20,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var tvCurrentApp: TextView
     private lateinit var tvAppName: TextView
     private lateinit var etToken: EditText
-    private lateinit var etAppId: EditText
     private lateinit var tvTokenHint: TextView
     private lateinit var seekInterval: SeekBar
     private lateinit var tvInterval: TextView
@@ -47,12 +45,10 @@ class MainActivity : AppCompatActivity() {
                 is EventBus.Event.Connected -> {
                     tvStatus.text = event.username
                     tvStatusDot.setBackgroundResource(R.drawable.dot_green)
-                    cardStatus.setBackgroundColor(getColor(R.color.ios_card))
                 }
                 is EventBus.Event.Disconnected -> {
                     tvStatus.text = "Desconectado"
                     tvStatusDot.setBackgroundResource(R.drawable.dot_red)
-                    cardStatus.setBackgroundColor(getColor(R.color.ios_card))
                     updateUI(false)
                 }
                 is EventBus.Event.AppDetected -> {
@@ -94,7 +90,6 @@ class MainActivity : AppCompatActivity() {
         tvCurrentApp = findViewById(R.id.tvCurrentApp)
         tvAppName = findViewById(R.id.tvAppName)
         etToken = findViewById(R.id.etToken)
-        etAppId = findViewById(R.id.etAppId)
         tvTokenHint = findViewById(R.id.tvTokenHint)
         seekInterval = findViewById(R.id.seekInterval)
         tvInterval = findViewById(R.id.tvInterval)
@@ -114,11 +109,8 @@ class MainActivity : AppCompatActivity() {
             tvTokenHint.setTextColor(getColor(R.color.ios_green))
         }
 
-        val savedAppId = PrefsManager.getAppId(this)
-        if (savedAppId.isNotEmpty()) {
-            etAppId.setText(savedAppId)
-        } else {
-            etAppId.setText(DEFAULT_APP_ID)
+        // Application ID pre-cargado
+        if (PrefsManager.getAppId(this).isEmpty()) {
             PrefsManager.saveAppId(this, DEFAULT_APP_ID)
         }
 
@@ -142,10 +134,10 @@ class MainActivity : AppCompatActivity() {
                 .setPositiveButton("OK", null).show()
         }
 
-        findViewById<Button>(R.id.btnHowAppId).setOnClickListener {
+        findViewById<Button>(R.id.btnHowAsset).setOnClickListener {
             android.app.AlertDialog.Builder(this, R.style.iOSDialog)
-                .setTitle("Subir Art Assets")
-                .setMessage("1. discord.com/developers/applications\n2. New Application > nombre\n3. Copia Application ID\n4. Rich Presence > Art Assets\n5. Sube iconos:\n   app_whatsapp\n   app_youtube\n   app_spotify\n   (minusculas, espacios = _)")
+                .setTitle("Subir tu icono (1 vez)")
+                .setMessage("1. discord.com/developers/applications\n2. Selecciona tu Application\n3. Rich Presence > Art Assets\n4. Add Image(s)\n5. Nombre: default\n6. Sube UN icono (el de tu Application)\n7. Save\n\nListo - ese icono se usara para todas las apps")
                 .setPositiveButton("OK", null).show()
         }
     }
@@ -173,13 +165,11 @@ class MainActivity : AppCompatActivity() {
 
     private fun startRpc() {
         val token = etToken.text.toString().trim()
-        val appId = etAppId.text.toString().trim()
         if (token.isEmpty()) { Toast.makeText(this, "Pega tu token", Toast.LENGTH_SHORT).show(); return }
-        if (appId.isEmpty()) { Toast.makeText(this, "Pega tu Application ID", Toast.LENGTH_SHORT).show(); return }
-        if (!hasUsageAccess()) { Toast.makeText(this, "Otorga permisos de Usage Access", Toast.LENGTH_SHORT).show(); return }
+        if (!hasUsageAccess()) { Toast.makeText(this, "Otorga Usage Access", Toast.LENGTH_SHORT).show(); return }
 
         PrefsManager.saveToken(this, token)
-        PrefsManager.saveAppId(this, appId)
+        PrefsManager.saveAppId(this, DEFAULT_APP_ID)
         PrefsManager.setServiceRunning(this, true)
 
         val svc = Intent(this, AppDetectionService::class.java)
