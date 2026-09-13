@@ -6,9 +6,9 @@ import android.content.SharedPreferences
 object PrefsManager {
     private const val PREFS_NAME = "discord_rpc_prefs"
     private const val KEY_TOKEN = "discord_token"
+    private const val KEY_APP_ID = "discord_app_id"
     private const val KEY_SERVICE_RUNNING = "service_running"
     private const val KEY_INTERVAL = "detection_interval"
-    private const val KEY_ENABLED_APPS = "enabled_apps"
 
     private fun getPrefs(context: Context): SharedPreferences {
         return context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -20,6 +20,14 @@ object PrefsManager {
 
     fun getToken(context: Context): String {
         return getPrefs(context).getString(KEY_TOKEN, "") ?: ""
+    }
+
+    fun saveAppId(context: Context, appId: String) {
+        getPrefs(context).edit().putString(KEY_APP_ID, appId).apply()
+    }
+
+    fun getAppId(context: Context): String {
+        return getPrefs(context).getString(KEY_APP_ID, "") ?: ""
     }
 
     fun setServiceRunning(context: Context, running: Boolean) {
@@ -35,14 +43,6 @@ object PrefsManager {
     }
 
     fun getInterval(context: Context): Long {
-        return getPrefs(context).getLong(KEY_INTERVAL, 10000L)
-    }
-
-    fun saveEnabledApps(context: Context, apps: Set<String>) {
-        getPrefs(context).edit().putStringSet(KEY_ENABLED_APPS, apps).apply()
-    }
-
-    fun getEnabledApps(context: Context): Set<String> {
-        return getPrefs(context).getStringSet(KEY_ENABLED_APPS, emptySet()) ?: emptySet()
+        return getPrefs(context).getLong(KEY_INTERVAL, 3000L)
     }
 }

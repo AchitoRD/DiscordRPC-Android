@@ -7,17 +7,12 @@ import android.content.Intent
 import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
-import android.util.Log
 import androidx.core.app.NotificationCompat
 
 class AppDetectionService : Service() {
 
     companion object {
-        private const val TAG = "AppDetectionService"
         private const val NOTIFICATION_ID = 1001
-        private const val MAX連續_SAME_APP_MS = 1800000L // 30 min max showing same app
-        private const val MIN_INTERVAL_MS = 5000L
-        private const val MAX_INTERVAL_MS = 120000L
         private val EXCLUDED = setOf(
             "com.discordrpc",
             "com.discord",
@@ -54,9 +49,7 @@ class AppDetectionService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        when (intent?.action) {
-            "STOP" -> { stopService(); return START_NOT_STICKY }
-        }
+        if (intent?.action == "STOP") { stopService(); return START_NOT_STICKY }
         startForegroundNotification()
         startDetection()
         return START_STICKY
@@ -69,13 +62,10 @@ class AppDetectionService : Service() {
                 .apply { description = "Deteccion activa"; setShowBadge(false) }
             getSystemService(NotificationManager::class.java).createNotificationChannel(ch)
         }
-
         val stopI = Intent(this, AppDetectionService::class.java).apply { action = "STOP" }
         val stopP = PendingIntent.getService(this, 0, stopI, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-
         val openI = Intent(this, MainActivity::class.java).apply { flags = Intent.FLAG_ACTIVITY_SINGLE_TOP }
         val openP = PendingIntent.getActivity(this, 0, openI, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-
         val n = NotificationCompat.Builder(this, channelId)
             .setContentTitle("DiscordRPC")
             .setContentText("Detectando apps...")
@@ -90,23 +80,26 @@ class AppDetectionService : Service() {
 
     private fun startDetection() {
         val token = PrefsManager.getToken(this)
+        val appId = PrefsManager.getAppId(this)
         if (token.isEmpty()) {
-            EventBus.post(EventBus.Event.Error("Sin token - pon tu token de Discord"))
-            stopSelf()
-            return
+            EventBus.post(EventBus.Event.Error("Sin token"))
+            stopSelf(); return
+        }
+        if (appId.isEmpty()) {
+            EventBus.post(EventBus.Event.Error("Sin Application ID - crealo en Discord Developer Portal"))
+            stopSelf(); return
         }
 
         acquireWakeLock()
-
-        gateway = DiscordGateway(token)
+        gateway = DiscordGateway(token, appId)
         gateway?.connect()
 
         running = true
-        val interval = PrefsManager.getInterval(this).coerceIn(MIN_INTERVAL_MS, MAX_INTERVAL_MS)
+        val interval = PrefsManager.getInterval(this)
         EventBus.post(EventBus.Event.Log("Deteccion cada ${interval/1000}s"))
 
         detectionThread = Thread {
-            Thread.sleep(1500) // wait for gateway
+            Thread.sleep(800) // solo 800ms para que el gateway se conecte
             while (running && !Thread.currentThread().isInterrupted) {
                 try {
                     detectApp()
@@ -123,37 +116,30 @@ class AppDetectionService : Service() {
     private fun detectApp() {
         val usm = getSystemService(Context.USAGE_STATS_SERVICE) as? UsageStatsManager ?: return
         val now = System.currentTimeMillis()
-        val stats = usm.queryUsageStats(UsageStatsManager.INTERVAL_DAILY, now - 15000, now)
-        if (stats.isNullOrEmpty()) {
-            EventBus.post(EventBus.Event.Log("Sin datos UsageStats"))
-            return
-        }
+        val stats = usm.queryUsageStats(UsageStatsManager.INTERVAL_DAILY, now - 10000, now)
+        if (stats.isNullOrEmpty()) return
 
         val top = stats.maxByOrNull { it.lastTimeUsed } ?: return
         val pkg = top.packageName
         if (pkg in EXCLUDED || pkg == currentPackage) return
 
-        // Anti-spam: throttle rapid switches
         val timeSinceLastSwitch = now - lastSwitchTime
-        if (timeSinceLastSwitch < 2000) return // min 2s between switches
+        if (timeSinceLastSwitch < 1500) return // 1.5s min between switches
         lastSwitchTime = now
 
-        // Anti-flood: track detections per minute
         totalDetections++
         lastDetections.add(now)
         lastDetections = lastDetections.filter { now - it < 60000 }.toMutableList()
         if (lastDetections.size > 30) {
-            EventBus.post(EventBus.Event.Log("Anti-flood: demasiados cambios, pausando 30s"))
-            Thread.sleep(30000)
-            return
+            EventBus.post(EventBus.Event.Log("Anti-flood: pausando 15s"))
+            Thread.sleep(15000); return
         }
 
-        val oldApp = currentAppName
         currentPackage = pkg
         currentAppName = getAppName(pkg)
         appStartTime = now
 
-        EventBus.post(EventBus.Event.Log("[$totalDetections] $oldApp -> $currentAppName"))
+        EventBus.post(EventBus.Event.Log("[$totalDetections] $currentAppName"))
         EventBus.post(EventBus.Event.AppDetected(currentAppName, pkg))
 
         if (gateway?.isConnected() == true) {
@@ -165,19 +151,17 @@ class AppDetectionService : Service() {
                 startTimestamp = appStartTime
             )
         } else {
-            EventBus.post(EventBus.Event.Log("Gateway no conectado, app detectada localmente"))
+            EventBus.post(EventBus.Event.Log("Sin conexion a Discord"))
         }
     }
 
     private fun acquireWakeLock() {
         try {
             val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
-            wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "DiscordRPC:Detection").apply {
-                acquire(60 * 60 * 1000L) // max 1 hour
+            wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "DiscordRPC:Detect").apply {
+                acquire(60 * 60 * 1000L)
             }
-        } catch (e: Exception) {
-            EventBus.post(EventBus.Event.Log("WakeLock error: ${e.message}"))
-        }
+        } catch (e: Exception) { }
     }
 
     private fun getAppName(packageName: String): String {
@@ -194,26 +178,15 @@ class AppDetectionService : Service() {
         running = false
         detectionThread?.interrupt()
         detectionThread = null
-
-        // CLEANUP: limpiar Rich Presence al detener
-        try {
-            gateway?.clearActivity()
-            Thread.sleep(200)
-            gateway?.disconnect()
-        } catch (e: Exception) {}
+        try { gateway?.clearActivity(); Thread.sleep(150); gateway?.disconnect() } catch (e: Exception) {}
         gateway = null
-
         try { wakeLock?.release() } catch (e: Exception) {}
         wakeLock = null
-
         PrefsManager.setServiceRunning(this, false)
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
-        EventBus.post(EventBus.Event.Log("Servicio detenido y Rich Presence limpiado"))
+        EventBus.post(EventBus.Event.Log("Detenido"))
     }
 
-    override fun onDestroy() {
-        stopService()
-        super.onDestroy()
-    }
+    override fun onDestroy() { stopService(); super.onDestroy() }
 }

@@ -7,7 +7,7 @@ import org.json.JSONObject
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 
-class DiscordGateway(private val token: String) {
+class DiscordGateway(private val token: String, private val applicationId: String) {
     private var webSocket: WebSocket? = null
     private val isConnected = AtomicBoolean(false)
     private var heartbeatInterval = 41250L
@@ -42,11 +42,7 @@ class DiscordGateway(private val token: String) {
                 isConnected.set(false)
                 val msg = t.message ?: "Error desconocido"
                 EventBus.post(EventBus.Event.Log("Fallo: $msg"))
-                if (msg.contains("resolve") || msg.contains("timeout")) {
-                    EventBus.post(EventBus.Event.Disconnected("Sin internet o DNS fallido"))
-                } else {
-                    EventBus.post(EventBus.Event.Disconnected(msg))
-                }
+                EventBus.post(EventBus.Event.Disconnected(msg))
             }
         })
     }
@@ -59,7 +55,7 @@ class DiscordGateway(private val token: String) {
                 10 -> {
                     val d = json.optJSONObject("d")
                     heartbeatInterval = d?.optLong("heartbeat_interval", 41250) ?: 41250
-                    EventBus.post(EventBus.Event.Log("HELLO OK, heartbeat: ${heartbeatInterval}ms"))
+                    EventBus.post(EventBus.Event.Log("HELLO OK"))
                     startHeartbeat()
                     sendIdentify()
                 }
@@ -71,7 +67,7 @@ class DiscordGateway(private val token: String) {
                 }
                 7 -> disconnect()
                 9 -> {
-                    EventBus.post(EventBus.Event.Log("Token invalido o sesion rechazada"))
+                    EventBus.post(EventBus.Event.Log("Token invalido"))
                     disconnect()
                 }
                 1 -> sendHeartbeat(json.opt("d"))
@@ -91,12 +87,11 @@ class DiscordGateway(private val token: String) {
                     put("os", "linux")
                     put("browser", "DiscordRPC")
                     put("device", "DiscordRPC")
-                    put("system_locale", "es-ES")
                 })
             })
         }
         val ok = webSocket?.send(payload.toString()) ?: false
-        EventBus.post(EventBus.Event.Log("Identify enviado: $ok"))
+        EventBus.post(EventBus.Event.Log("Identify: $ok"))
     }
 
     private fun startHeartbeat() {
@@ -140,17 +135,22 @@ class DiscordGateway(private val token: String) {
     ) {
         if (!isConnected.get()) return
 
+        val assetKey = "app_${appName.lowercase().replace(" ", "_").replace("[^a-z0-9_]".toRegex(), "")}"
+
         val activity = JSONObject().apply {
             put("name", appName)
             put("type", 0)
             if (details.isNotEmpty()) put("details", details)
             if (state.isNotEmpty()) put("state", state)
             put("assets", JSONObject().apply {
-                put("large_image", "app_${appName.lowercase().replace(" ", "_")}")
-                if (largeImageText != null) put("large_text", largeImageText)
+                put("large_image", assetKey)
+                put("large_text", appName)
             })
             if (startTimestamp != null) {
                 put("timestamps", JSONObject().apply { put("start", startTimestamp) })
+            }
+            if (applicationId.isNotEmpty()) {
+                put("application_id", applicationId)
             }
         }
 
@@ -179,7 +179,7 @@ class DiscordGateway(private val token: String) {
             })
         }
         webSocket?.send(payload.toString())
-        EventBus.post(EventBus.Event.Log("Actividad limpiada de Discord"))
+        EventBus.post(EventBus.Event.Log("Actividad limpiada"))
     }
 
     fun disconnect() {
