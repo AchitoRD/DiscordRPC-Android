@@ -20,6 +20,33 @@ class DiscordGateway(private val token: String, private val applicationId: Strin
 
     companion object {
         private const val GATEWAY_URL = "wss://gateway.discord.gg/?v=10&encoding=json"
+
+        // Mapeo de package name -> asset key
+        private val ASSET_MAP = mapOf(
+            "com.whatsapp" to "whatsapp",
+            "com.whatsapp.w4b" to "whatsapp",
+            "com.google.android.youtube" to "youtube",
+            "com.google.android.apps.youtube.music" to "youtube",
+            "com.facebook.katana" to "facebook",
+            "com.facebook.lite" to "facebook",
+            "com.instagram.android" to "instagram",
+            "com.instagram.lite" to "instagram",
+            "com.zhiliaoapp.musically" to "tik-tok",
+            "com.ss.android.ugc.trill" to "tik-tok",
+            "com.spotify.music" to "default",
+            "com.netflix.mediaclient" to "default",
+            "com.discord" to "default",
+            "com.discord.android" to "default",
+            "com.opera.browser" to "default",
+            "com.opera.mini.native" to "default",
+            "com.UCMobile" to "default",
+            "com.android.chrome" to "default",
+            "org.mozilla.firefox" to "default",
+            "com.brave.browser" to "default",
+            "com.vanced.manager" to "youtube",
+            "com.termux" to "default",
+            "com.github.android" to "default"
+        )
     }
 
     fun connect() {
@@ -110,8 +137,13 @@ class DiscordGateway(private val token: String, private val applicationId: Strin
         }
     }
 
+    private fun getAssetKey(packageName: String): String {
+        return ASSET_MAP[packageName] ?: "default"
+    }
+
     fun updateActivity(
         appName: String,
+        packageName: String,
         details: String,
         state: String,
         largeImageText: String? = null,
@@ -119,14 +151,15 @@ class DiscordGateway(private val token: String, private val applicationId: Strin
     ) {
         if (!isConnected.get()) return
 
-        // Usa "default" como asset key - el usuario sube UN icono como "default"
+        val assetKey = getAssetKey(packageName)
+
         val activity = JSONObject().apply {
             put("name", appName)
             put("type", 0)
             if (details.isNotEmpty()) put("details", details)
             if (state.isNotEmpty()) put("state", state)
             put("assets", JSONObject().apply {
-                put("large_image", "default")
+                put("large_image", assetKey)
                 put("large_text", appName)
             })
             if (startTimestamp != null) {

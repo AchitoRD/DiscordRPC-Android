@@ -119,6 +119,7 @@ class AppDetectionService : Service() {
         if (gateway?.isConnected() == true) {
             gateway?.updateActivity(
                 appName = currentAppName,
+                packageName = pkg,
                 details = "Playing on mobile",
                 state = currentAppName,
                 largeImageText = currentAppName,
