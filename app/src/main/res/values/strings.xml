@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">DiscordRPC</string>
+    <string name="notification_channel_id">discord_rpc_service</string>
+    <string name="notification_channel_name">Discord RPC Service</string>
+</resources>
