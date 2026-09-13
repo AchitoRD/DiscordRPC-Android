@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="orbit_bg">#FF04050F</color>
+    <!-- Orbit exact CSS variables -->
+    <color name="orbit_bg">#FF0B0E24</color>
+    <color name="orbit_bg_outer">#FF04050F</color>
     <color name="orbit_surface">#FF131737</color>
     <color name="orbit_surface2">#FF1A1F45</color>
     <color name="orbit_surface_hi">#FF212752</color>
@@ -10,29 +12,13 @@
     <color name="orbit_muted2">#FF5D6190</color>
     <color name="orbit_periwinkle">#FF7C8CFF</color>
     <color name="orbit_green">#FF3DDC84</color>
+    <color name="orbit_green_dark">#FF1B8F58</color>
     <color name="orbit_amber">#FFFFB454</color>
     <color name="orbit_coral">#FFFF7A6E</color>
+    <color name="orbit_periwinkle_dark">#FF5459D8</color>
+    <color name="orbit_avatar_start">#FF8B7CFF</color>
+    <color name="orbit_avatar_end">#FF4E42D6</color>
     <color name="white">#FFFFFFFF</color>
     <color name="black">#FF000000</color>
-    <color name="status_online">#FF3DDC84</color>
-    <color name="status_connecting">#FFFFB454</color>
-    <color name="text_primary">#FFF2F3FB</color>
-    <color name="text_secondary">#FF8C90B8</color>
-    <color name="text_hint">#FF5D6190</color>
-    <color name="text_accent">#FF7C8CFF</color>
-    <color name="bg_card">#FF131737</color>
-    <color name="ios_bg">#FF04050F</color>
-    <color name="ios_card">#FF131737</color>
-    <color name="ios_text">#FFF2F3FB</color>
-    <color name="ios_text2">#FF8C90B8</color>
-    <color name="ios_text3">#FF5D6190</color>
-    <color name="ios_blue">#FF7C8CFF</color>
-    <color name="ios_green">#FF3DDC84</color>
-    <color name="ios_red">#FFFF7A6E</color>
-    <color name="ios_separator">#12FFFFFF</color>
-    <color name="glass_border">#12FFFFFF</color>
-    <color name="discord_blurple">#FF5865F2</color>
-    <color name="discord_green">#FF3DDC84</color>
-    <color name="discord_red">#FFFF7A6E</color>
-    <color name="discord_yellow">#FFFFB454</color>
+    <color name="transparent">#00000000</color>
 </resources>

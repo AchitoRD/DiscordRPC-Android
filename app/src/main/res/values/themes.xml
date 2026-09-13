@@ -2,14 +2,13 @@
 <resources>
     <style name="Theme.DiscordRPC" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <item name="colorPrimary">@color/orbit_periwinkle</item>
-        <item name="colorPrimaryVariant">@color/orbit_periwinkle</item>
+        <item name="colorPrimaryVariant">@color/orbit_periwinkle_dark</item>
         <item name="colorOnPrimary">@color/white</item>
         <item name="colorSecondary">@color/orbit_periwinkle</item>
-        <item name="android:statusBarColor">@color/orbit_bg</item>
-        <item name="android:navigationBarColor">@color/orbit_bg</item>
-        <item name="android:windowBackground">@color/orbit_bg</item>
+        <item name="android:statusBarColor">@color/orbit_bg_outer</item>
+        <item name="android:navigationBarColor">@color/orbit_bg_outer</item>
+        <item name="android:windowBackground">@color/orbit_bg_outer</item>
         <item name="android:windowLightStatusBar">false</item>
-        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
     </style>
 
     <style name="OrbitDialog" parent="ThemeOverlay.MaterialComponents.MaterialAlertDialog">
