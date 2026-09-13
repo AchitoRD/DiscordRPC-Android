@@ -10,14 +10,12 @@ import android.os.Looper
 import android.os.Process
 import android.provider.Settings
 import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var dotLive: View
+    private lateinit var dotLive: android.view.View
     private lateinit var tvStatusSub: TextView
     private lateinit var tvUsername: TextView
     private lateinit var tvNowEyebrow: TextView
@@ -25,10 +23,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var tvNowApp: TextView
     private lateinit var tvTimeStart: TextView
     private lateinit var tvTimeEnd: TextView
-    private lateinit var barFill: View
-    private lateinit var nowArt: View
+    private lateinit var barFill: android.view.View
+    private lateinit var nowArt: android.view.View
     private lateinit var activityList: LinearLayout
-    private lateinit var fabStartStop: TextView
+    private lateinit var tvLog: TextView
 
     private val handler = Handler(Looper.getMainLooper())
     private var startTime = 0L
@@ -53,7 +51,6 @@ class MainActivity : AppCompatActivity() {
             when (event) {
                 is EventBus.Event.Status -> {
                     tvNowTitle.text = event.message
-                    tvNowEyebrow.text = ""
                 }
                 is EventBus.Event.Connected -> {
                     tvUsername.text = event.username
@@ -61,11 +58,15 @@ class MainActivity : AppCompatActivity() {
                     dotLive.setBackgroundResource(R.drawable.dot_green)
                     tvNowTitle.text = "Esperando..."
                     tvNowEyebrow.text = "CONECTADO"
-                    tvNowApp.text = "Discord Gateway activo"
+                    tvNowApp.text = "Gateway activo"
+                    appendLog("Conectado como ${event.username}")
                 }
                 is EventBus.Event.Disconnected -> {
                     tvStatusSub.text = "Desconectado"
                     dotLive.setBackgroundResource(R.drawable.dot_red)
+                    tvNowTitle.text = "Desconectado"
+                    tvNowApp.text = event.reason
+                    appendLog("Desconectado: ${event.reason}")
                     updateUI(false)
                 }
                 is EventBus.Event.AppDetected -> {
@@ -76,22 +77,25 @@ class MainActivity : AppCompatActivity() {
                         startTime = System.currentTimeMillis()
                         handler.removeCallbacks(elapsedRunnable)
                         handler.post(elapsedRunnable)
-                        addActivityItem(event.name, "Estado enviado por WebSocket")
+                        addActivityItem(event.name, "Presence actualizado")
+                        appendLog("→ ${event.name} (${event.packageName})")
                     } else {
                         tvNowEyebrow.text = ""
                         tvNowTitle.text = "Inactivo"
-                        tvNowApp.text = ""
+                        tvNowApp.text = "App cerrada - presence limpiado"
                         tvTimeStart.text = "00:00"
                         startTime = 0L
                         handler.removeCallbacks(elapsedRunnable)
+                        appendLog("Presence limpiado")
                     }
                 }
                 is EventBus.Event.Error -> {
                     tvNowTitle.text = event.message
                     tvStatusSub.text = "Error"
                     dotLive.setBackgroundResource(R.drawable.dot_red)
+                    appendLog("ERROR: ${event.message}")
                 }
-                is EventBus.Event.Log -> {}
+                is EventBus.Event.Log -> appendLog(event.line)
             }
         }
     }
@@ -129,59 +133,45 @@ class MainActivity : AppCompatActivity() {
         barFill = findViewById(R.id.barFill)
         nowArt = findViewById(R.id.nowArt)
         activityList = findViewById(R.id.activityList)
-        fabStartStop = findViewById(R.id.fabStartStop)
+        tvLog = findViewById(R.id.tvLog)
     }
 
     private fun loadSavedData() {
-        val savedToken = PrefsManager.getToken(this)
         if (PrefsManager.getAppId(this).isEmpty()) {
             PrefsManager.saveAppId(this, DEFAULT_APP_ID)
         }
-
-        if (savedToken.isEmpty()) {
-            showTokenDialog()
+        val savedToken = PrefsManager.getToken(this)
+        if (savedToken.isNotEmpty()) {
+            appendLog("Token guardado")
+        } else {
+            appendLog("Configura tu token desde Ajustes")
         }
-    }
-
-    private fun showTokenDialog() {
-        val input = EditText(this).apply {
-            hint = "Pega tu Discord token..."
-            setPadding(48, 32, 48, 32)
-            setTextColor(getColor(R.color.orbit_text))
-            setHintTextColor(getColor(R.color.orbit_muted2))
-            setBackgroundColor(getColor(R.color.orbit_surface2))
-        }
-
-        android.app.AlertDialog.Builder(this, R.style.OrbitDialog)
-            .setTitle("Discord Token")
-            .setMessage("Necesitas tu token de Discord.\n\n1. Abre discord.com en navegador\n2. F12 → Network → gateway.discord.gg\n3. Headers → Authorization\n4. Copia el valor completo")
-            .setView(input)
-            .setPositiveButton("Guardar") { _, _ ->
-                val token = input.text.toString().trim()
-                if (token.isNotEmpty()) {
-                    PrefsManager.saveToken(this, token)
-                    Toast.makeText(this, "Token guardado", Toast.LENGTH_SHORT).show()
-                }
-            }
-            .setNegativeButton("Cancelar", null)
-            .show()
     }
 
     private fun setupButtons() {
-        findViewById<View>(R.id.navSettings).setOnClickListener {
+        findViewById<android.view.View>(R.id.navHome).setOnClickListener {
+            if (PrefsManager.isServiceRunning(this)) stopRpc() else startRpc()
+        }
+
+        findViewById<android.view.View>(R.id.navSettings).setOnClickListener {
             showSettingsDialog()
         }
 
-        findViewById<View>(R.id.navHome).setOnClickListener {
-            if (PrefsManager.isServiceRunning(this)) stopRpc() else startRpc()
-        }
-
-        fabStartStop.setOnClickListener {
-            if (PrefsManager.isServiceRunning(this)) stopRpc() else startRpc()
+        findViewById<android.view.View>(R.id.navActivity).setOnClickListener {
+            tvLog.text = ""
+            appendLog("Log limpiado")
         }
 
         findViewById<TextView>(R.id.btnVerLog).setOnClickListener {
             showLogDialog()
+        }
+
+        findViewById<TextView>(R.id.btnClearLog).setOnClickListener {
+            tvLog.text = ""
+        }
+
+        findViewById<android.view.View>(R.id.btnSettings).setOnClickListener {
+            showSettingsDialog()
         }
     }
 
@@ -189,19 +179,19 @@ class MainActivity : AppCompatActivity() {
         val view = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(48, 32, 48, 16)
+            setBackgroundColor(getColor(R.color.orbit_surface))
         }
 
-        val tvTokenLabel = TextView(this).apply {
-            text = "Token"
+        TextView(this).apply {
+            text = "Discord Token"
             setTextColor(getColor(R.color.orbit_muted))
             textSize = 13f
+            view.addView(this)
         }
-        view.addView(tvTokenLabel)
 
         val etToken = EditText(this).apply {
-            val saved = PrefsManager.getToken(this@MainActivity)
-            setText(saved)
-            hint = "token..."
+            setText(PrefsManager.getToken(this@MainActivity))
+            hint = "pega tu token..."
             setTextColor(getColor(R.color.orbit_text))
             setHintTextColor(getColor(R.color.orbit_muted2))
             setBackgroundColor(getColor(R.color.orbit_surface2))
@@ -221,25 +211,23 @@ class MainActivity : AppCompatActivity() {
         view.addView(tvPerm)
 
         if (!hasUsageAccess()) {
-            val btnPerm = TextView(this).apply {
-                text = "Abrir Configuración"
+            TextView(this).apply {
+                text = "→ Abrir Configuración"
                 setTextColor(getColor(R.color.orbit_periwinkle))
                 textSize = 12f
                 setPadding(0, 8, 0, 0)
-                setOnClickListener {
-                    startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
-                }
+                setOnClickListener { startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)) }
+                view.addView(this)
             }
-            view.addView(btnPerm)
         }
 
-        val tvIntervalLabel = TextView(this).apply {
-            text = "Frecuencia de detección"
+        TextView(this).apply {
+            text = "Frecuencia"
             setTextColor(getColor(R.color.orbit_muted))
             textSize = 12f
             setPadding(0, 24, 0, 8)
+            view.addView(this)
         }
-        view.addView(tvIntervalLabel)
 
         val intervals = arrayOf("2s", "3s", "5s", "10s", "30s", "60s")
         val intervalMs = longArrayOf(2000, 3000, 5000, 10000, 30000, 60000)
@@ -258,6 +246,7 @@ class MainActivity : AppCompatActivity() {
                 if (token.isNotEmpty()) PrefsManager.saveToken(this, token)
                 PrefsManager.setInterval(this, intervalMs[spinner.selectedItemPosition])
                 Toast.makeText(this, "Guardado", Toast.LENGTH_SHORT).show()
+                appendLog("Ajustes actualizados")
             }
             .setNegativeButton("Cerrar", null)
             .show()
@@ -265,10 +254,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun showLogDialog() {
         android.app.AlertDialog.Builder(this, R.style.OrbitDialog)
-            .setTitle("Log de actividad")
+            .setTitle("Estado")
             .setMessage(buildString {
                 appendLine("Servicio: ${if (PrefsManager.isServiceRunning(this@MainActivity)) "Activo" else "Inactivo"}")
-                appendLine("Token: ${if (PrefsManager.getToken(this@MainActivity).isNotEmpty()) "Guardado" else "Sin token"}")
+                appendLine("Token: ${if (PrefsManager.getToken(this@MainActivity).isNotEmpty()) "OK" else "Sin token"}")
                 appendLine("App ID: ${PrefsManager.getAppId(this@MainActivity)}")
                 appendLine("Intervalo: ${PrefsManager.getInterval(this@MainActivity) / 1000}s")
                 appendLine("Permisos: ${if (hasUsageAccess()) "OK" else "Sin permiso"}")
@@ -280,8 +269,8 @@ class MainActivity : AppCompatActivity() {
     private fun startRpc() {
         val token = PrefsManager.getToken(this)
         if (token.isEmpty()) {
-            Toast.makeText(this, "Configura tu token primero", Toast.LENGTH_SHORT).show()
-            showTokenDialog()
+            Toast.makeText(this, "Configura tu token desde Ajustes", Toast.LENGTH_SHORT).show()
+            showSettingsDialog()
             return
         }
         if (!hasUsageAccess()) {
@@ -294,6 +283,7 @@ class MainActivity : AppCompatActivity() {
         val svc = Intent(this, AppDetectionService::class.java)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) startForegroundService(svc) else startService(svc)
         updateUI(true)
+        appendLog("Servicio iniciado")
     }
 
     private fun stopRpc() {
@@ -301,25 +291,22 @@ class MainActivity : AppCompatActivity() {
         startService(svc)
         PrefsManager.setServiceRunning(this, false)
         updateUI(false)
+        appendLog("Servicio detenido")
     }
 
     private fun updateUI(running: Boolean) {
         if (running) {
-            fabStartStop.text = "■"
-            fabStartStop.visibility = View.VISIBLE
             tvStatusSub.text = "Conectando..."
             dotLive.setBackgroundResource(R.drawable.dot_yellow)
             tvNowEyebrow.text = "CONECTANDO"
             tvNowTitle.text = "Espere..."
             tvNowApp.text = "Estableciendo conexión..."
         } else {
-            fabStartStop.text = "▶"
-            fabStartStop.visibility = View.VISIBLE
             tvStatusSub.text = "Inactivo"
             dotLive.setBackgroundResource(R.drawable.dot_gray)
             tvNowEyebrow.text = ""
             tvNowTitle.text = "Inactivo"
-            tvNowApp.text = "Toca ▶ para iniciar"
+            tvNowApp.text = "Toca Inicio para iniciar"
             tvTimeStart.text = "00:00"
             tvTimeEnd.text = ""
             startTime = 0L
@@ -334,10 +321,16 @@ class MainActivity : AppCompatActivity() {
         val time = java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date())
         item.findViewById<TextView>(R.id.tvItemTime).text = time
         activityList.addView(item, 0)
-
         while (activityList.childCount > 5) {
             activityList.removeViewAt(activityList.childCount - 1)
         }
+    }
+
+    private fun appendLog(message: String) {
+        val time = java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date())
+        tvLog.append("$time  $message\n")
+        val scroll = (tvLog.layout?.let { it.getLineTop(tvLog.lineCount) - tvLog.height } ?: 0)
+        if (scroll > 0) tvLog.scrollTo(0, scroll)
     }
 
     private fun hasUsageAccess(): Boolean {
